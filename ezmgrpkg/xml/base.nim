@@ -29,12 +29,6 @@ trait ModRepository:
 
 registerTypeId(ref ModRepository, "e3aa196d-c71b-4601-9fa1-2635949c4d88")
 
-declareXmlElement:
-  type Repositories* {.id: "68dc6990-b12c-4eaa-bc52-54899308bb5e".} = object of RootObj
-    children*: seq[ref ModRepository]
-
-rootns.registerType("repos", ref Repositories)
-
 export ModInfo, ModRepository
 
 {.used.}
