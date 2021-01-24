@@ -1,0 +1,7 @@
+.vscode
+pkgs
+nimcache
+*.exe
+*.dll
+*.lib
+*.pdb
