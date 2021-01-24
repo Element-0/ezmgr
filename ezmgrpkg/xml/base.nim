@@ -25,9 +25,15 @@ trait ModInfo:
 registerTypeId(ref ModInfo, "0855a09b-f959-4145-864f-3e98f14aafc5")
 
 trait ModRepository:
-  method list*(self: ref ModRepository): Table[string, ref ModInfo]
+  method list*(self: ref ModRepository, base: Uri): Table[string, ref ModInfo]
 
 registerTypeId(ref ModRepository, "e3aa196d-c71b-4601-9fa1-2635949c4d88")
+
+declareXmlElement:
+  type ManagerConfig* {.id: "6a18454f-3fab-4c9f-83d2-7674bbd1855c", children: repository.} = object of RootObj
+    repository* {.check(value == nil, r"repository is required").}: ref ModRepository
+
+rootns.registerType("manager-config", ref ManagerConfig)
 
 export ModInfo, ModRepository
 

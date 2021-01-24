@@ -1,6 +1,13 @@
 import ezcurl, uri, streams, os
 
-proc fetchFile*(url: Uri, dest: string) =
+proc resolveUri*(base, url: Uri): Uri =
+  if url.scheme == "relative":
+    result = base
+    result.path = base.path /../ url.path
+  else:
+    return url
+
+proc fetchFile*(url: Uri; dest: string) =
   let file = openFileStream(dest, fmWrite)
   try:
     defer: file.close()

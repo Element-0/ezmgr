@@ -4,12 +4,13 @@ declareXmlElement:
   type ModManifest* {.id: "e18cdb2d-efda-4d01-bf36-cbdf21eb6db9", children: description.} = object of RootObj
     href: Uri
     description: ref ModDescription
+    base {.skipped.}: Uri
     id {.skipped.}: string
 
 impl ModManifest, ModInfo:
   method desc*(self: ref ModManifest): ref ModDescription = self.description
   method fetch*(self: ref ModManifest, dest: string) =
-    fetchFile(self.href, dest)
+    fetchFile(resolveUri(self.base, self.href), dest)
     let ret = parseModFile(dest)
     if ret.id != self.id:
       removeFile(dest)
@@ -22,9 +23,10 @@ declareXmlElement:
     children: Table[string, ref ModManifest]
 
 impl ManifestRepository, ModRepository:
-  method list*(self: ref ManifestRepository): Table[string, ref ModInfo] =
+  method list*(self: ref ManifestRepository, base: Uri): Table[string, ref ModInfo] =
     for id, val in self.children:
       val.id = id
+      val.base = base
       result[id] = val
 
 rootns.registerType("manifest-repo", ref ManifestRepository, ref ModRepository)
