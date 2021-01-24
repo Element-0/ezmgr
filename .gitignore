@@ -5,3 +5,4 @@ nimcache
 *.dll
 *.lib
 *.pdb
+*.xml
