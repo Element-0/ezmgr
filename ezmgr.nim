@@ -4,16 +4,51 @@
 when not isMainModule:
   {.error: "cannot be imported".}
 
-import parseopt, strformat, streams, os, uri, strutils, tables
-import ezmgrpkg/xml, xmlio, ezcommon/version_code
+import parseopt, strformat, streams, os, uri, strutils, tables, options
+import ezmgrpkg/xml, ezmgrpkg/properities, xmlio, ezcommon/version_code
 
 proc printHelp() {.noreturn.} =
   echo "ezmgr - Cli for ElementZero"
   echo()
   echo "usage:"
-  echo "ezmgr help           Print help"
-  echo "ezmgr dump           Dump configuration"
-  echo "ezmgr fetch [name]   Fetch mod"
+  echo "ezmgr help                     Print help"
+  echo "ezmgr dump                     Dump configuration"
+  echo "ezmgr fetch <name>             Download mod"
+  echo "ezmgr generate <folder> ...    Generate skeleton for userdata"
+  echo()
+  echo "generate options:"
+  echo "  --server-name:<servername=Element Zero>"
+  echo "  --gamemode:<gamemode=creative>"
+  echo "  --difficulty:<difficulty=peaceful>"
+  echo "  --allow-chects[:true|false] | --disallow-cheats"
+  echo "  --max-players:<num>"
+  echo "  --online-mode[:true|false] | --offline-mode"
+  echo "  --op-permission-level:[1|2|3|4]"
+  echo "  --white-list:<filename> | --no-white-list"
+  echo "  --force-gamemode[:true|false]"
+  echo "  --server-port:<port=19132>"
+  echo "  --server-portv6:<port=19133>"
+  echo "  --wserver-retry-time:<time=0>"
+  echo "  --wserver-encryption[:true|false]"
+  echo "  --view-distance:<distance=8>"
+  echo "  --tick-distance:<distance=4>"
+  echo "  --player-idle-timeout:<timeout=30>"
+  echo "  --language:<code=en_US>"
+  echo "  --max-threads:<threads=8>"
+  echo "  --level-name:<levelname=default>"
+  echo "  --server-type:<type=normal>"
+  echo "  --level-seed:<levelseed=(random)>"
+  echo "  --default-player-permission-level:<level=member>"
+  echo "  --server-wakeup-frequency:<freq=200>"
+  echo "  --texturepack-required[:true|false] | --texturepack-optional"
+  echo "  --compression-threshold:<threshold=1>"
+  echo "  --msa-gamertags-only[:true|false]"
+  echo "  --item-transaction-logging-enabled[:true|false]"
+  echo "  --server-authoritative-movement | --client-authoritative-movement"
+  echo "  --player-movement-score-threshold:<score=20>"
+  echo "  --player-movement-distance-threshold:<distance=0.3>"
+  echo "  --player-movement-duration-threshold-in-ms:<duration=500>"
+  echo "  --correct-player-movement[:true|false]"
   quit 0
 
 proc loadCfg(): tuple[content: ref ManagerConfig, base: Uri] =
@@ -53,6 +88,14 @@ proc expectKind(p: var OptParser, kind: static CmdLineKind) =
     echo &"expect {kind}, got {p.kind}"
     printHelp()
 
+proc generateUserData(name: string, p: var OptParser) =
+  var cfg = initCfg()
+  let opt = parseCfgFromOpt(p, cfg)
+  createDir(name)
+  opt.map do(whitelist_path: string):
+    copyFile(whitelist_path, name / "whitelist.json")
+  cfg.writeCfg(name)
+
 proc handleCLI() =
   var p = initOptParser()
   case p.nextArgument():
@@ -64,5 +107,7 @@ proc handleCLI() =
     let name = p.nextArgument()
     p.expectKind(cmdEnd)
     fetch(name)
+  of "generate":
+    generateUserData(p.nextArgument(), p)
   else: printHelp()
 handleCLI()
