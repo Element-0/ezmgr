@@ -89,6 +89,8 @@ proc expectKind(p: var OptParser, kind: static CmdLineKind) =
     printHelp()
 
 proc generateUserData(name: string, p: var OptParser) =
+  if dirExists name:
+    raise newException(ValueError, "cannot overwrite exists folder")
   var cfg = initCfg()
   let opt = parseCfgFromOpt(p, cfg)
   createDir(name)
