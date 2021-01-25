@@ -11,7 +11,11 @@ impl ModManifest, ModInfo:
   method desc*(self: ref ModManifest): ref ModDescription = self.description
   method fetch*(self: ref ModManifest, dest: string) =
     fetchFile(resolveUri(self.base, self.href), dest)
-    let ret = parseModFile(dest)
+    let ret = try:
+      parseModFile(dest)
+    except:
+      removeFile(dest)
+      raise getCurrentException()
     if ret.id != self.id:
       removeFile(dest)
       raise newException(ValueError, &"mod id not matched, expected {self.id}, but got {ret.id}")

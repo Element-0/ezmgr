@@ -27,6 +27,8 @@ template queryOptionalKind(x: static string): string =
 proc parseModFile*(str: string): tuple[id: string, desc: ref ModDescription] =
   new result.desc
   let size = GetFileVersionInfoSize(str, nil)
+  if size == 0:
+    raise newException(InvalidFileInfoError, "invalid mod")
   var buffer = newSeq[byte](size)
   let pblock = addr buffer[0]
   if GetFileVersionInfo(str, 0, size, pblock) == 0:
