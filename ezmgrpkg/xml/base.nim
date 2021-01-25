@@ -1,4 +1,4 @@
-import xmlio, vtable, tables, ns, uri
+import xmlio, vtable, tables, ns, uri, os
 import ezcommon/version_code
 
 registerTypeId(VersionCode, "88fb7ac0-2538-4318-a318-80993bb63db2")
@@ -32,6 +32,7 @@ registerTypeId(ref ModRepository, "e3aa196d-c71b-4601-9fa1-2635949c4d88")
 declareXmlElement:
   type ManagerConfig* {.id: "6a18454f-3fab-4c9f-83d2-7674bbd1855c", children: repository.} = object of RootObj
     repository* {.check(value == nil, r"repository is required").}: ref ModRepository
+    cache* {.check(not dirExists(value), r"invalid folder").}: string
 
 rootns.registerType("manager-config", ref ManagerConfig)
 

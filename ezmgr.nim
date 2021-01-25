@@ -13,30 +13,56 @@ proc printHelp() {.noreturn.} =
   echo "usage:"
   echo "ezmgr help           Print help"
   echo "ezmgr dump           Dump configuration"
+  echo "ezmgr fetch [name]   Fetch mod"
   quit 0
 
-# FIXME: don't use noreturn
-proc dumpConfig() {.noreturn.} =
+proc loadCfg(): tuple[content: ref ManagerConfig, base: Uri] =
   let path = getAppDir() / "ezmgr.xml"
   let str = openFileStream(path)
-  let cfg = readXml(root, str, path, ref ManagerConfig)
+  result.content = readXml(root, str, path, ref ManagerConfig)
   var cururl = initUri()
   cururl.scheme = "file"
   cururl.path = path.replace('\\', '/')
-  for id, ifo in cfg.repository.list(cururl):
+  result.base = cururl
+
+proc dumpConfig() =
+  let cfg = loadCfg()
+  echo "cache path: ", cfg.content.cache
+  echo "mod list:"
+  for id, ifo in cfg.content.repository.list(cfg.base):
     echo id, ":", ifo.desc()[]
-  quit 0
+
+proc fetch(name: string) =
+  let cfg = loadCfg()
+  var modmap = cfg.content.repository.list(cfg.base)
+  modmap.withValue(name, value) do:
+    value[].fetch(cfg.content.cache / &"cached-{name}.dll")
+  do:
+    raise newException(KeyError, &"mod {name} not found")
+
+proc nextArgument(p: var OptParser): string =
+  p.next()
+  if p.kind == cmdArgument:
+    return p.key
+  echo &"except argument, got {p.kind}"
+  printHelp()
+
+proc expectKind(p: var OptParser, kind: static CmdLineKind) =
+  p.next()
+  if p.kind != kind:
+    echo &"expect {kind}, got {p.kind}"
+    printHelp()
 
 proc handleCLI() =
   var p = initOptParser()
-  while true:
-    p.next()
-    case p.kind:
-    of cmdEnd, cmdShortOption, cmdLongOption: printHelp()
-    of cmdArgument:
-      case p.key:
-      of "help": printHelp()
-      of "dump": dumpConfig()
-      else: quit &"invalid subcommand: {p.key}"
-
+  case p.nextArgument():
+  of "help": printHelp()
+  of "dump":
+    p.expectKind(cmdEnd)
+    dumpConfig()
+  of "fetch":
+    let name = p.nextArgument()
+    p.expectKind(cmdEnd)
+    fetch(name)
+  else: printHelp()
 handleCLI()
