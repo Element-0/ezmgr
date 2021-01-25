@@ -94,6 +94,7 @@ proc generateUserData(name: string, p: var OptParser) =
   var cfg = initCfg()
   let opt = parseCfgFromOpt(p, cfg)
   createDir(name)
+  writeFile(name / "whitelist.json", "[]")
   opt.map do(whitelist_path: string):
     copyFile(whitelist_path, name / "whitelist.json")
   writeFile(name / "permissions.json", "[]")
