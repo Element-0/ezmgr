@@ -24,3 +24,6 @@ task prepare, "Prepare dlls":
 
 before build:
   prepareTask()
+
+before install:
+  prepareTask()
