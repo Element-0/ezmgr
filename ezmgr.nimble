@@ -5,7 +5,7 @@ author        = "CodeHz"
 description   = "ElementZero Manager"
 license       = "GPL-3"
 srcDir        = "."
-installExt    = @["nim"]
+installExt    = @["nim", "dll"]
 bin           = @["ezmgr"]
 skipDirs      = @["tests"]
 
@@ -23,7 +23,4 @@ task prepare, "Prepare dlls":
   cpFile(gorge("nimble path ezcurl").strip / "libcurl.dll", "libcurl.dll")
 
 before build:
-  prepareTask()
-
-before install:
   prepareTask()
