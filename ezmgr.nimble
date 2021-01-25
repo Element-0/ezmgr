@@ -14,7 +14,7 @@ skipDirs      = @["tests"]
 
 requires "nim >= 1.4.2"
 requires "winim"
-requires "ezcommon, ezcurl, ezxmlcfg, xmlio, vtable"
+requires "ezcommon, ezcurl, ezxmlcfg, ezpipe, xmlio, vtable"
 
 from os import `/`
 from strutils import strip

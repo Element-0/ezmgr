@@ -4,17 +4,21 @@
 when not isMainModule:
   {.error: "cannot be imported".}
 
-import parseopt, strformat, streams, os, uri, strutils, tables, options
-import ezmgrpkg/xml, ezmgrpkg/properities, xmlio, ezcommon/version_code
+import std/[parseopt, strformat, streams, os, uri, strutils, tables, strtabs, options, osproc, oids]
+import ezmgrpkg/xml, ezmgrpkg/properities, xmlio, ezcommon/version_code, ezpipe
 
 proc printHelp() {.noreturn.} =
   echo "ezmgr - Cli for ElementZero"
   echo()
   echo "usage:"
-  echo "ezmgr help                     Print help"
-  echo "ezmgr dump                     Dump configuration"
-  echo "ezmgr fetch <name>             Download mod"
-  echo "ezmgr generate <folder> ...    Generate skeleton for userdata"
+  echo "ezmgr help                             Print help"
+  echo "ezmgr dump                             Dump configuration"
+  echo "ezmgr fetch <name>                     Download mod"
+  echo "ezmgr generate <folder> ...            Generate skeleton for userdata"
+  echo "ezmgr run <folder>                     Run instance at target folder"
+  echo "ezmgr mod <folder> list                List mod reference for instance"
+  echo "ezmgr mod <folder> add <modid>         Add mod reference to instance"
+  echo "ezmgr mod <folder> del <modid>         Delete mod reference to instance"
   echo()
   echo "generate options:"
   echo "  --server-name:<servername=Element Zero>"
@@ -101,6 +105,30 @@ proc generateUserData(name: string, p: var OptParser) =
   writeFile(name / "mods.json", "[]")
   cfg.writeCfg(name)
 
+proc daemonThread(ipc: ref IpcPipe) {.thread.} =
+  ipc.accept()
+  while true:
+    let cmd = ipc.recv()
+    echo cmd
+    ipc.send(cmd)
+
+proc runInstance(name: string) =
+  doAssert dirExists name
+  var envtab = newStringTable()
+  for (key, value) in envPairs():
+    envtab[key] = value
+  var thr: Thread[ref IpcPipe]
+  let ipc = newIpcPipeServer()
+  thr.createThread(daemonThread, ipc)
+  envtab["EZPIPE"] = $ipc.id
+  let prc = startProcess(
+    command = getAppDir() / "bedrock_server.exe",
+    workingDir = name,
+    env = envtab,
+    options = {poParentStreams})
+  let code = prc.waitForExit()
+  echo "exit code: ", code
+
 proc handleCLI() =
   var p = initOptParser()
   case p.nextArgument():
@@ -114,5 +142,9 @@ proc handleCLI() =
     fetch(name)
   of "generate":
     generateUserData(p.nextArgument(), p)
+  of "run":
+    let name = p.nextArgument()
+    p.expectKind(cmdEnd)
+    runInstance(name)
   else: printHelp()
 handleCLI()
