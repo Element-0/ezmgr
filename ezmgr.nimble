@@ -5,7 +5,7 @@ author        = "CodeHz"
 description   = "ElementZero Manager"
 license       = "GPL-3"
 srcDir        = "."
-installExt    = @["nim", "dll"]
+installExt    = @["nim", "dll", "pdb"]
 bin           = @["ezmgr"]
 skipDirs      = @["tests"]
 
