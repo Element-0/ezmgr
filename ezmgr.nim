@@ -94,6 +94,7 @@ proc generateUserData(name: string, p: var OptParser) =
   createDir(name)
   opt.map do(whitelist_path: string):
     copyFile(whitelist_path, name / "whitelist.json")
+  writeFile(name / "permissions.json", "[]")
   cfg.writeCfg(name)
 
 proc handleCLI() =
