@@ -14,6 +14,7 @@ skipDirs      = @["tests"]
 
 requires "nim >= 1.4.2"
 requires "winim"
+requires "https://github.com/Element-0/nim-prompti"
 requires "ezcommon, ezcurl, ezxmlcfg, ezpipe, xmlio, vtable"
 
 from os import `/`
