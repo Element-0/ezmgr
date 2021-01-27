@@ -1,0 +1,45 @@
+ezmgr - Cli for ElementZero
+
+usage:
+ezmgr help                             Print help
+ezmgr dump                             Dump configuration
+ezmgr fetch <name>                     Download mod
+ezmgr generate <folder> ...            Generate skeleton for userdata
+ezmgr run <folder>                     Run instance at target folder
+ezmgr mod <folder> list                List mod reference for instance
+ezmgr mod <folder> add <modid>         Add mod reference to instance
+ezmgr mod <folder> del <modid>         Delete mod reference to instance
+
+generate options:
+  --server-name:<servername=Element Zero>
+  --gamemode:<gamemode=creative>
+  --difficulty:<difficulty=peaceful>
+  --allow-chects[:true|false] | --disallow-cheats
+  --max-players:<num>
+  --online-mode[:true|false] | --offline-mode
+  --op-permission-level:[1|2|3|4]
+  --white-list:<filename> | --no-white-list
+  --force-gamemode[:true|false]
+  --server-port:<port=19132>
+  --server-portv6:<port=19133>
+  --wserver-retry-time:<time=0>
+  --wserver-encryption[:true|false]
+  --view-distance:<distance=8>
+  --tick-distance:<distance=4>
+  --player-idle-timeout:<timeout=30>
+  --language:<code=en_US>
+  --max-threads:<threads=8>
+  --level-name:<levelname=default>
+  --server-type:<type=normal>
+  --level-seed:<levelseed=(random)>
+  --default-player-permission-level:<level=member>
+  --server-wakeup-frequency:<freq=200>
+  --texturepack-required[:true|false] | --texturepack-optional
+  --compression-threshold:<threshold=1>
+  --msa-gamertags-only[:true|false]
+  --item-transaction-logging-enabled[:true|false]
+  --server-authoritative-movement | --client-authoritative-movement
+  --player-movement-score-threshold:<score=20>
+  --player-movement-distance-threshold:<distance=0.3>
+  --player-movement-duration-threshold-in-ms:<duration=500>
+  --correct-player-movement[:true|false]
