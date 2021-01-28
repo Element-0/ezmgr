@@ -1,27 +1,35 @@
-import std/[os, osproc, streams, strtabs, strformat, terminal]
+import std/[os, osproc, streams, strtabs, strformat, terminal, oids]
 import prompt
-import ezpipe
-
-proc daemonThread(ipc: ref IpcPipe) {.thread.} =
-  ipc.accept()
-  while true:
-    let cmd = ipc.recv()
-    echo cmd
-    ipc.send(cmd)
+import ezpipe, binpak, ezcommon/[log, ipc]
 
 type
   RunResultKind = enum
     rrk_run
+    rrk_dbg
     rrk_out
     rrk_err
+    rrk_log
   RunResult = object
     case kind: RunResultKind
     of rrk_run:
       exit_code: int
-    of rrk_out, rrk_err:
+    of rrk_dbg, rrk_out, rrk_err:
       content: string
+    of rrk_log:
+      log_data: LogData
 
 var run_result: Channel[RunResult]
+
+proc daemonThread(ipc: ref IpcPipe) {.thread.} =
+  ipc.accept()
+  while true:
+    let req = RequestPacket <<- ipc.recv()
+    run_result.send RunResult(kind: rrk_dbg, content: $req)
+    case req.kind:
+    of req_ping:
+      ipc.send: ~>$ ResponsePacket(kind: res_pong)
+    else:
+      ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "TODO")
 
 proc runThread(prc: Process) {.thread.} =
   let code = prc.waitForExit()
@@ -69,11 +77,14 @@ proc runInstance*(name: string) =
     let res = run_result.recv()
     case res.kind:
     of rrk_run:
+      prompt.hidePrompt()
       prompt.writeLine fgRed, styleBright, "exit code: ", fgWhite, styleBright, styleBlink, $res.exit_code, resetStyle
       run_thr.joinThread()
-      prompt.hidePrompt()
-      quit 0
+    of rrk_dbg:
+      prompt.writeLine fgYellow, styleBright, res.content, resetStyle
     of rrk_out:
       prompt.writeLine fgWhite, styleBright, res.content, resetStyle
     of rrk_err:
       prompt.writeLine fgRed, res.content, resetStyle
+    of rrk_log:
+      prompt.writeLine fgGreen, res.log_data.content, resetStyle

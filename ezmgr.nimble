@@ -15,7 +15,7 @@ skipDirs      = @["tests"]
 requires "nim >= 1.4.2"
 requires "winim"
 requires "https://github.com/Element-0/nim-prompt.git"
-requires "ezcommon, ezcurl, ezxmlcfg, ezpipe, xmlio, vtable"
+requires "ezcommon, ezcurl, ezxmlcfg, ezpipe, xmlio, vtable, binpak"
 
 from os import `/`
 from strutils import strip
