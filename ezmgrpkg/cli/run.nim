@@ -1,4 +1,4 @@
-import std/[os, osproc, streams, strtabs, strformat, terminal, oids]
+import std/[os, osproc, streams, strtabs, strformat, terminal, oids, tables]
 import prompt
 import ezpipe, binpak, ezcommon/[log, ipc]
 
@@ -24,9 +24,12 @@ proc daemonThread(ipc: ref IpcPipe) {.thread.} =
   ipc.accept()
   while true:
     let req = RequestPacket <<- ipc.recv()
-    run_result.send RunResult(kind: rrk_dbg, content: $req)
+    # run_result.send RunResult(kind: rrk_dbg, content: $req)
     case req.kind:
     of req_ping:
+      ipc.send: ~>$ ResponsePacket(kind: res_pong)
+    of req_log:
+      run_result.send RunResult(kind: rrk_log, log_data: req.logData)
       ipc.send: ~>$ ResponsePacket(kind: res_pong)
     else:
       ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "TODO")
@@ -87,4 +90,23 @@ proc runInstance*(name: string) =
     of rrk_err:
       prompt.writeLine fgRed, res.content, resetStyle
     of rrk_log:
-      prompt.writeLine fgGreen, res.log_data.content, resetStyle
+      let color = case res.log_data.level:
+        of lvl_notice: fgWhite
+        of lvl_info: fgBlue
+        of lvl_debug: fgMagenta
+        of lvl_warn: fgYellow
+        of lvl_error: fgRed
+      let txt = case res.log_data.level:
+        of lvl_notice: "[V]"
+        of lvl_info: "[I]"
+        of lvl_debug: "[D]"
+        of lvl_warn: "[W]"
+        of lvl_error: "[E]"
+      prompt.writeLine(
+        color, txt, " ",
+        styleBright, res.log_data.area, resetStyle, " ",
+        styleUnderscore, res.log_data.src_name,
+        "(", $res.log_data.src_line, ":", $res.log_data.src_column, ")", resetStyle, " ",
+        styleBright, res.log_data.content, resetStyle)
+      for key, val in res.log_data.details:
+        prompt.writeLine "  ", fgCyan, "=", $val
