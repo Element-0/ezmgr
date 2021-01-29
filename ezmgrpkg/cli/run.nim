@@ -86,16 +86,16 @@ proc runInstance*(name: string) =
     of rrk_dbg:
       prompt.writeLine fgYellow, styleBright, res.content, resetStyle
     of rrk_out:
-      prompt.writeLine fgWhite, styleBright, res.content, resetStyle
+      prompt.writeLine fgWhite, res.content, resetStyle
     of rrk_err:
       prompt.writeLine fgRed, res.content, resetStyle
     of rrk_log:
-      let color = case res.log_data.level:
-        of lvl_notice: fgWhite
-        of lvl_info: fgBlue
-        of lvl_debug: fgMagenta
-        of lvl_warn: fgYellow
-        of lvl_error: fgRed
+      let colors = case res.log_data.level:
+        of lvl_notice: (tag: fgWhite, lvlbg: bgWhite, lvlfg: fgBlack)
+        of lvl_info: (tag: fgBlue, lvlbg: bgBlue, lvlfg: fgBlack)
+        of lvl_debug: (tag: fgMagenta, lvlbg: bgMagenta, lvlfg: fgBlack)
+        of lvl_warn: (tag: fgYellow, lvlbg: bgYellow, lvlfg: fgBlack)
+        of lvl_error: (tag: fgRed, lvlbg: bgRed, lvlfg: fgBlack)
       let txt = case res.log_data.level:
         of lvl_notice: "[V]"
         of lvl_info: "[I]"
@@ -103,10 +103,11 @@ proc runInstance*(name: string) =
         of lvl_warn: "[W]"
         of lvl_error: "[E]"
       prompt.writeLine(
-        color, txt, " ",
-        styleBright, res.log_data.area, resetStyle, " ",
-        styleUnderscore, res.log_data.src_name,
-        "(", $res.log_data.src_line, ":", $res.log_data.src_column, ")", resetStyle, " ",
-        styleBright, res.log_data.content, resetStyle)
+        colors.tag, styleBright, txt, resetStyle, " ",
+        colors.lvlbg, colors.lvlfg, res.log_data.area, resetStyle, " ",
+        styleBright, res.log_data.content, resetStyle, " ",
+        styleUnderscore, res.log_data.source, "(", $res.log_data.line, ")", resetStyle)
       for key, val in res.log_data.details:
-        prompt.writeLine "  ", fgCyan, "=", $val
+        prompt.writeLine(
+          "    ", fgWhite, styleBright, $key, resetStyle,
+          fgCyan, ": ", styleBright, $val, resetStyle)
