@@ -81,17 +81,17 @@ proc runInstance*(name: string) =
     case res.kind:
     of rrk_run:
       prompt.hidePrompt()
-      prompt.writeLine fgRed, styleBright, "exit code: ", fgWhite, styleBright, styleBlink, $res.exit_code, resetStyle
+      prompt.writeLine fgRed, styleBright, "exit code: ", resetStyle, styleBright, styleBlink, $res.exit_code, resetStyle
       run_thr.joinThread()
     of rrk_dbg:
       prompt.writeLine fgYellow, styleBright, res.content, resetStyle
     of rrk_out:
-      prompt.writeLine fgWhite, res.content, resetStyle
+      prompt.writeLine res.content
     of rrk_err:
       prompt.writeLine fgRed, res.content, resetStyle
     of rrk_log:
       let colors = case res.log_data.level:
-        of lvl_notice: (tag: fgWhite, lvlbg: bgWhite, lvlfg: fgBlack)
+        of lvl_notice: (tag: fgCyan, lvlbg: bgCyan, lvlfg: fgBlack)
         of lvl_info: (tag: fgBlue, lvlbg: bgBlue, lvlfg: fgBlack)
         of lvl_debug: (tag: fgMagenta, lvlbg: bgMagenta, lvlfg: fgBlack)
         of lvl_warn: (tag: fgYellow, lvlbg: bgYellow, lvlfg: fgBlack)
@@ -106,8 +106,8 @@ proc runInstance*(name: string) =
         colors.tag, styleBright, txt, resetStyle, " ",
         colors.lvlbg, colors.lvlfg, res.log_data.area, resetStyle, " ",
         styleBright, res.log_data.content, resetStyle, " ",
-        styleUnderscore, res.log_data.source, "(", $res.log_data.line, ")", resetStyle)
+        res.log_data.source, "(", $res.log_data.line, ")")
       for key, val in res.log_data.details:
         prompt.writeLine(
-          "    ", fgWhite, styleBright, $key, resetStyle,
+          "    ", resetStyle, styleBright, $key, resetStyle,
           fgCyan, ": ", styleBright, $val, resetStyle)
