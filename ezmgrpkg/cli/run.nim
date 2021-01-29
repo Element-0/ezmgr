@@ -81,8 +81,9 @@ proc runInstance*(name: string) =
     case res.kind:
     of rrk_run:
       prompt.hidePrompt()
-      prompt.writeLine fgRed, styleBright, "exit code: ", resetStyle, styleBright, styleBlink, $res.exit_code, resetStyle
+      styledEcho fgRed, styleBright, "exit code: ", resetStyle, styleBright, styleBlink, $res.exit_code, resetStyle
       run_thr.joinThread()
+      quit res.exit_code
     of rrk_dbg:
       prompt.writeLine fgYellow, styleBright, res.content, resetStyle
     of rrk_out:
