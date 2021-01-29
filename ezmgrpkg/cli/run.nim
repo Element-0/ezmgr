@@ -1,9 +1,11 @@
 import std/[os, osproc, streams, strtabs, strformat, terminal, oids, tables]
 import prompt
+import winim/lean except `&`
 import ezpipe, binpak, ezcommon/[log, ipc]
 
 type
   RunResultKind = enum
+    rrk_die
     rrk_run
     rrk_dbg
     rrk_out
@@ -17,6 +19,8 @@ type
       content: string
     of rrk_log:
       log_data: LogData
+    of rrk_die:
+      discard
 
 var run_result: Channel[RunResult]
 
@@ -26,6 +30,9 @@ proc daemonThread(ipc: ref IpcPipe) {.thread.} =
     let req = RequestPacket <<- ipc.recv()
     # run_result.send RunResult(kind: rrk_dbg, content: $req)
     case req.kind:
+    of req_bye:
+      run_result.send RunResult(kind: rrk_die)
+      return
     of req_ping:
       ipc.send: ~>$ ResponsePacket(kind: res_pong)
     of req_log:
@@ -76,9 +83,13 @@ proc runInstance*(name: string) =
   out_thrs[0].createThread(outThread[rrk_out], prc.outputStream())
   out_thrs[1].createThread(outThread[rrk_err], prc.errorStream())
   inp_thr.createThread(inpThread, (str: prc.inputStream(), p: prompt))
+  defer:
+    TerminateProcess(-1, 0)
   while true:
     let res = run_result.recv()
     case res.kind:
+    of rrk_die:
+      return
     of rrk_run:
       prompt.hidePrompt()
       styledEcho fgRed, styleBright, "exit code: ", resetStyle, styleBright, styleBlink, $res.exit_code, resetStyle
