@@ -102,12 +102,15 @@ proc runInstance*(name: string) =
         of lvl_debug: "[D]"
         of lvl_warn: "[W]"
         of lvl_error: "[E]"
-      prompt.writeLine(
-        colors.tag, styleBright, txt, resetStyle, " ",
-        colors.lvlbg, colors.lvlfg, res.log_data.area, resetStyle, " ",
-        styleBright, res.log_data.content, resetStyle, " ",
-        res.log_data.source, "(", $res.log_data.line, ")")
-      for key, val in res.log_data.details:
-        prompt.writeLine(
-          "    ", resetStyle, styleBright, $key, resetStyle,
-          fgCyan, ": ", styleBright, $val, resetStyle)
+      prompt.withOutput do():
+        stdout.styledWrite colors.tag, styleBright, txt, resetStyle, " "
+        stdout.styledWrite colors.lvlbg, colors.lvlfg, res.log_data.area, resetStyle, " "
+        for tag in res.log_data.tags:
+          stdout.styledWrite fgGreen, styleDim, tag, resetStyle, " "
+        stdout.styledWrite styleBright, res.log_data.content, resetStyle, " "
+        stdout.styledWrite res.log_data.source, "(", $res.log_data.line, ")"
+        stdout.write("\n")
+        for key, val in res.log_data.details:
+          stdout.styledWriteLine(
+            "    ", resetStyle, styleBright, $key, resetStyle,
+            fgCyan, ": ", styleBright, $val, resetStyle)
