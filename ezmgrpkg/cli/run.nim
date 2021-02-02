@@ -37,9 +37,9 @@ proc daemonThread(ipc: ref IpcPipe) {.thread.} =
       ipc.send: ~>$ ResponsePacket(kind: res_pong)
     of req_log:
       run_result.send RunResult(kind: rrk_log, log_data: req.logData)
-      ipc.send: ~>$ ResponsePacket(kind: res_pong)
     else:
-      ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "TODO")
+      if not req.kind.noReply:
+        ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "TODO")
 
 proc runThread(prc: Process) {.thread.} =
   let code = prc.waitForExit()
