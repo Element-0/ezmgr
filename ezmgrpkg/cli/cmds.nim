@@ -1,4 +1,5 @@
-import std/[tables, strformat, os, parseopt, options]
+import std/[strformat, os, parseopt, options]
+import ezcommon/version_code
 import ../xml, ../properties
 import ./shared
 
@@ -11,16 +12,15 @@ proc dumpConfig*() =
   let cfg = loadCfg()
   echo "cache path: ", cfg.content.cache
   echo "mod list:"
-  for id, ifo in cfg.content.repository.list(cfg.base):
-    echo id, ":", ifo.desc()[]
+  cfg.content.repository.list(cfg.base) do(id: string; info: ref ModInfo) -> bool:
+    echo id, ":", info.desc()[]
 
 proc fetchMod*(name: string) =
   let cfg = loadCfg()
-  var modmap = cfg.content.repository.list(cfg.base)
-  modmap.withValue(name, value) do:
-    value[].fetch(cfg.content.cache / &"cached-{name}.dll")
-  do:
+  var modinfo = cfg.content.repository.query(cfg.base, name)
+  if modinfo == nil:
     raise newException(KeyError, &"mod {name} not found")
+  modinfo.fetch(cfg.content.cache / &"cached-{name}-{modinfo.version}.dll")
 
 proc generateUserData*(name: string, p: var OptParser) =
   if dirExists name:
