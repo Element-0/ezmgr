@@ -14,8 +14,8 @@ impl MergeRepository, ModRepository:
         if result != nil:
           if tmp.desc().version > result.desc().version:
             result = tmp
-    if result == nil:
-      raise newException(ValueError, "all fallback failed")
+        else:
+          result = tmp
 
   method list*(self: ref MergeRepository; base: Uri; callback: ModListCallback) =
     for repo in self.repos:

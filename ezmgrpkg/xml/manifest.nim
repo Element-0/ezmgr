@@ -9,6 +9,9 @@ declareXmlElement:
     base {.skipped.}: Uri
     id {.skipped.}: string
 
+func `$`*(self: ref ModManifest): string =
+  "(href: " & $self.href & ", version: " & $self.description.version & ")"
+
 impl ModManifest, ModInfo:
   method desc*(self: ref ModManifest): ref ModDescription = self.description
   method fetch*(self: ref ModManifest, dest: string) =
@@ -21,6 +24,9 @@ impl ModManifest, ModInfo:
     if ret.id != self.id:
       removeFile(dest)
       raise newException(ValueError, &"mod id not matched, expected {self.id}, but got {ret.id}")
+    if ret.desc != self.description:
+      removeFile(dest)
+      raise newException(ValueError, &"mod version not matched, expected {self.description.version}, but got {ret.desc.version}")
 
 rootns.registerType("manifest", ref ModManifest)
 
@@ -48,6 +54,7 @@ impl QualifiedModMapAttachedHandler, XmlAttachedAttributeHandler:
       raise newException(ValueError, "invalid mod id")
     createProxy self.value
   method finish(self: ref QualifiedModMapAttachedHandler) =
+    self.value.id = self.id
     if self.id.len == 0:
       raise newException(ValueError, "invalid mod id")
 
@@ -81,17 +88,20 @@ declareXmlElement:
 
 func findVersion(data: var seq[ref ModManifest], slice: Slice[VersionCode]): ref ModManifest =
   let bound = data.upperBoundVersion(slice.b)
-  if data[bound].description.version > slice.a:
+  if data[bound].description.version >= slice.a:
     return data[bound]
 
 impl ManifestRepository, ModRepository:
   method query*(self: ref ManifestRepository; base: Uri; query: ModQuery): ref ModInfo =
     self.children.withValue(query.id, data):
-      return data[].findVersion(query.version)
+      let tmp = data[].findVersion(query.version)
+      tmp.base = base
+      return tmp
 
   method list*(self: ref ManifestRepository, base: Uri; callback: ModListCallback) =
     for id, arr in self.children:
       for item in arr:
+        item.base = base
         if callback(id, item):
           return
 

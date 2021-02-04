@@ -9,10 +9,11 @@ impl FallbackRepository, ModRepository:
   method query*(self: ref FallbackRepository; base: Uri; query: ModQuery): ref ModInfo =
     for repo in self.repos:
       try:
-        return repo.query(base, query)
+        result = repo.query(base, query)
+        if result != nil:
+          return
       except:
         discard
-    raise newException(ValueError, "all fallback failed")
 
   method list*(self: ref FallbackRepository; base: Uri; callback: ModListCallback) =
     for repo in self.repos:

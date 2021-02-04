@@ -17,7 +17,7 @@ proc dumpConfig*() =
 
 proc fetchMod*(name: string) =
   let cfg = loadCfg()
-  var modinfo = cfg.content.repository.query(cfg.base, name)
+  let modinfo = cfg.content.repository.query(cfg.base, name)
   if modinfo == nil:
     raise newException(KeyError, &"mod {name} not found")
   modinfo.fetch(cfg.content.cache / &"cached-{name}-{modinfo.version}.dll")
