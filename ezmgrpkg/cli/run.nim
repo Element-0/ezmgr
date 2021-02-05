@@ -1,5 +1,5 @@
 import std/[os, osproc, streams, strtabs, strformat, terminal, oids, tables]
-import prompt
+import ezprompt
 import winim/lean except `&`
 import ezpipe, binpak, ezcommon/[log, ipc]
 
