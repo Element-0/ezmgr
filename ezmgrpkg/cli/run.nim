@@ -106,9 +106,9 @@ proc runInstance*(name: string) =
   while true:
     case run_result.recv()
     of die(): return
-    of run():
+    of run(exit_code: @code):
       prompt.hidePrompt()
-      styledEcho fgRed, styleBright, "exit code: ", resetStyle, styleBright, styleBlink, $res.exit_code, resetStyle
+      styledEcho fgRed, styleBright, "exit code: ", resetStyle, styleBright, styleBlink, $code, resetStyle
     of dbg(content: @content): prompt.writeLine fgYellow, styleBright, content, resetStyle
     of rrk_out(content: @content): prompt.writeLine content
     of rrk_err(content: @content): prompt.writeLine fgRed, content, resetStyle

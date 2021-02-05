@@ -13,7 +13,7 @@ skipDirs      = @["tests"]
 # Dependencies
 
 requires "nim >= 1.4.2"
-requires "winim"
+requires "winim, fusion"
 requires "ezprompt, ezcommon, ezcurl, ezxmlcfg, ezpipe, xmlio, vtable, binpak"
 
 from os import `/`
