@@ -1,7 +1,8 @@
-import std/[os, osproc, streams, strtabs, strformat, terminal, oids, tables]
+import std/[os, osproc, streams, strtabs, strformat, terminal, oids, tables, uri]
 import ezprompt
 import winim/lean except `&`
 import ezpipe, binpak, ezcommon/[log, ipc]
+import ./shared, ../xml
 
 type
   RunResultKind = enum
@@ -24,11 +25,16 @@ type
 
 var run_result: Channel[RunResult]
 
-proc daemonThread(ipc: ref IpcPipe) {.thread.} =
+type DaemonContext = tuple
+  ipc: ref IpcPipe
+  config: ref ManagerConfig
+  base: Uri
+
+proc daemonThread(ctx: DaemonContext) {.thread.} =
+  let (ipc, config, base) = ctx
   ipc.accept()
   while true:
     let req = RequestPacket <<- ipc.recv()
-    # run_result.send RunResult(kind: rrk_dbg, content: $req)
     case req.kind:
     of req_bye:
       run_result.send RunResult(kind: rrk_die)
@@ -37,9 +43,20 @@ proc daemonThread(ipc: ref IpcPipe) {.thread.} =
       ipc.send: ~>$ ResponsePacket(kind: res_pong)
     of req_log:
       run_result.send RunResult(kind: rrk_log, log_data: req.logData)
-    else:
-      if not req.kind.noReply:
-        ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "TODO")
+    of req_load:
+      let modreq = ModQuery(id: req.modName, version: (req.minVersion..req.maxVersion))
+      try: {.gcsafe.}:
+        let modinfo = config.repository.query(base, modreq)
+        if modinfo == nil:
+          ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "mod not found")
+          continue
+        let path = config.cache / getModCachedName(req.modName, modinfo)
+        if not fileExists path:
+          run_result.send RunResult(kind: rrk_dbg, content: &"Fetching mod {req.modName}")
+          modinfo.fetch(path)
+        ipc.send: ~>$ ResponsePacket(kind: res_load, modPath: path)
+      except:
+        ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: getCurrentExceptionMsg())
 
 proc runThread(prc: Process) {.thread.} =
   let code = prc.waitForExit()
@@ -56,9 +73,10 @@ proc inpThread(arg: tuple[str: Stream, p: Prompt]) {.thread.} =
     arg.str.writeLine(text)
 
 proc runInstance*(name: string) =
+  let cfg = loadCfg()
   doAssert dirExists name
   run_result.open(4)
-  var ipc_thr: Thread[ref IpcPipe]
+  var ipc_thr: Thread[DaemonContext]
   var run_thr: Thread[Process]
   var out_thrs: array[2, Thread[Stream]]
   var inp_thr: Thread[tuple[str: Stream, p: Prompt]]
@@ -66,7 +84,7 @@ proc runInstance*(name: string) =
   for (key, value) in envPairs():
     envtab[key] = value
   let ipc = newIpcPipeServer()
-  ipc_thr.createThread(daemonThread, ipc)
+  ipc_thr.createThread(daemonThread, (ipc: ipc, config: cfg.content, base: cfg.base))
   envtab["EZPIPE"] = $ipc.id
   let prc = startProcess(
     command = getAppDir() / "bedrock_server.exe",

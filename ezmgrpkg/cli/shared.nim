@@ -24,3 +24,5 @@ proc expectKind*(p: var OptParser, kind: static CmdLineKind) =
     echo &"expect {kind}, got {p.kind}"
     quit 1
 
+proc getModCachedName*(id: string, info: ref ModInfo): string =
+  &"cached-{id}-{info.version}.dll"

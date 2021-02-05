@@ -76,7 +76,7 @@ proc fetchMod*(p: var OptParser) =
   let modinfo = cfg.content.repository.query(cfg.base, info)
   if modinfo == nil:
     raise newException(KeyError, &"mod {info.name} not found")
-  let filename = &"cached-{info.name}-{modinfo.version}.dll"
+  let filename = getModCachedName(info.name, modinfo)
   modinfo.fetch(cfg.content.cache / filename)
   echo "Downloaded to ", filename
 
