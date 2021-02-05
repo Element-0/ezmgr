@@ -9,9 +9,7 @@ proc handleCLI*() =
     p.expectKind(cmdEnd)
     dumpConfig()
   of "fetch":
-    let name = p.nextArgument()
-    p.expectKind(cmdEnd)
-    fetchMod(name)
+    fetchMod(p)
   of "generate":
     generateUserData(p.nextArgument(), p)
   of "run":
