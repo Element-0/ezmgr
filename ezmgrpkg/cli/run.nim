@@ -1,4 +1,5 @@
-import std/[os, osproc, streams, strtabs, strformat, terminal, oids, tables, uri]
+{.experimental: "caseStmtMacros".}
+import std/[os, osproc, streams, strtabs, strformat, terminal, oids, tables, uri], fusion/matching
 import ezprompt
 import winim/lean except `&`
 import ezpipe, binpak, ezcommon/[log, ipc]
@@ -34,25 +35,24 @@ proc daemonThread(ctx: DaemonContext) {.thread.} =
   let (ipc, config, base) = ctx
   ipc.accept()
   while true:
-    let req = RequestPacket <<- ipc.recv()
-    case req.kind:
-    of req_bye:
+    case RequestPacket <<- ipc.recv()
+    of bye():
       run_result.send RunResult(kind: rrk_die)
       return
-    of req_ping:
+    of ping():
       ipc.send: ~>$ ResponsePacket(kind: res_pong)
-    of req_log:
-      run_result.send RunResult(kind: rrk_log, log_data: req.logData)
-    of req_load:
-      let modreq = ModQuery(id: req.modName, version: (req.minVersion..req.maxVersion))
+    of log(logData: @data):
+      run_result.send RunResult(kind: rrk_log, log_data: data)
+    of load(modName: @id, minVersion: @minVersion, maxVersion: @maxVersion):
+      let modreq = ModQuery(id: id, version: (minVersion..maxVersion))
       try: {.gcsafe.}:
         let modinfo = config.repository.query(base, modreq)
         if modinfo == nil:
           ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "mod not found")
           continue
-        let path = config.cache / getModCachedName(req.modName, modinfo)
+        let path = config.cache / getModCachedName(id, modinfo)
         if not fileExists path:
-          run_result.send RunResult(kind: rrk_dbg, content: &"Fetching mod {req.modName}")
+          run_result.send RunResult(kind: rrk_dbg, content: &"Fetching mod {id}")
           modinfo.fetch(path)
         ipc.send: ~>$ ResponsePacket(kind: res_load, modPath: path)
       except:
@@ -104,27 +104,22 @@ proc runInstance*(name: string) =
   defer:
     TerminateProcess(-1, 0)
   while true:
-    let res = run_result.recv()
-    case res.kind:
-    of rrk_die:
-      return
-    of rrk_run:
+    case run_result.recv()
+    of die(): return
+    of run():
       prompt.hidePrompt()
       styledEcho fgRed, styleBright, "exit code: ", resetStyle, styleBright, styleBlink, $res.exit_code, resetStyle
-    of rrk_dbg:
-      prompt.writeLine fgYellow, styleBright, res.content, resetStyle
-    of rrk_out:
-      prompt.writeLine res.content
-    of rrk_err:
-      prompt.writeLine fgRed, res.content, resetStyle
-    of rrk_log:
-      let colors = case res.log_data.level:
+    of dbg(content: @content): prompt.writeLine fgYellow, styleBright, content, resetStyle
+    of rrk_out(content: @content): prompt.writeLine content
+    of rrk_err(content: @content): prompt.writeLine fgRed, content, resetStyle
+    of log(log_data: @data):
+      let colors = case data.level:
         of lvl_notice: (tag: fgCyan, lvlbg: bgCyan, lvlfg: fgBlack)
         of lvl_info: (tag: fgBlue, lvlbg: bgBlue, lvlfg: fgBlack)
         of lvl_debug: (tag: fgMagenta, lvlbg: bgMagenta, lvlfg: fgBlack)
         of lvl_warn: (tag: fgYellow, lvlbg: bgYellow, lvlfg: fgBlack)
         of lvl_error: (tag: fgRed, lvlbg: bgRed, lvlfg: fgBlack)
-      let txt = case res.log_data.level:
+      let txt = case data.level:
         of lvl_notice: "[V]"
         of lvl_info: "[I]"
         of lvl_debug: "[D]"
@@ -132,13 +127,13 @@ proc runInstance*(name: string) =
         of lvl_error: "[E]"
       prompt.withOutput do():
         stdout.styledWrite colors.tag, styleBright, txt, resetStyle, " "
-        stdout.styledWrite colors.lvlbg, colors.lvlfg, res.log_data.area, resetStyle, " "
-        for tag in res.log_data.tags:
+        stdout.styledWrite colors.lvlbg, colors.lvlfg, data.area, resetStyle, " "
+        for tag in data.tags:
           stdout.styledWrite fgGreen, styleDim, tag, resetStyle, " "
-        stdout.styledWrite styleBright, res.log_data.content, resetStyle, " "
-        stdout.styledWrite res.log_data.source, "(", $res.log_data.line, ")"
+        stdout.styledWrite styleBright, data.content, resetStyle, " "
+        stdout.styledWrite data.source, "(", $data.line, ")"
         stdout.write("\n")
-        for key, val in res.log_data.details:
+        for key, val in data.details:
           stdout.styledWriteLine(
             "    ", resetStyle, styleBright, $key, resetStyle,
             fgCyan, ": ", styleBright, $val, resetStyle)
