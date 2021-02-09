@@ -77,7 +77,7 @@ proc fetchMod*(p: var OptParser) =
   if modinfo == nil:
     raise newException(KeyError, &"mod {info.name} not found")
   let filename = getModCachedName(info.name, modinfo)
-  modinfo.fetch(cfg.content.cache / filename)
+  modinfo.fetch(getAppDir() / cfg.content.cache / filename)
   echo "Downloaded to ", filename
 
 proc generateUserData*(name: string; p: var OptParser) =

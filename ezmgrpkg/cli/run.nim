@@ -50,7 +50,7 @@ proc daemonThread(ctx: DaemonContext) {.thread.} =
         if modinfo == nil:
           ipc.send: ~>$ ResponsePacket(kind: res_failed, errMsg: "mod not found")
           continue
-        let path = config.cache / getModCachedName(id, modinfo)
+        let path = getAppDir() / config.cache / getModCachedName(id, modinfo)
         if not fileExists path:
           run_result.send RunResult(kind: rrk_dbg, content: &"Fetching mod {id}")
           modinfo.fetch(path)
