@@ -21,6 +21,11 @@ declareXmlElement:
 do:
   for file in walkFiles(self.path / "ezmod-*.dll"):
     let info = parseModFile(file)
+    info.desc.kind = modServerSide
+    self.cache.add (id: info.id, info: newLocalMod(file, info.desc))
+  for file in walkFiles(self.path / "ezmgr-*.dll"):
+    let info = parseModFile(file)
+    info.desc.kind = modManagerSide
     self.cache.add (id: info.id, info: newLocalMod(file, info.desc))
 
 impl LocalRepository, ModRepository:

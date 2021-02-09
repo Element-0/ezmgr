@@ -9,8 +9,13 @@ buildTypedAttributeHandler parseVersionCode
 registerTypeId(Uri, "a6318113-2e5f-40c2-ac3c-19ead82e2918")
 buildTypedAttributeHandler parseUri
 
+type ModKind* {.pure.} = enum
+  modServerSide = "server"
+  modManagerSide = "manager"
+
 declareXmlElement:
   type ModDescription* {.id: "8d04017d-0101-439d-989a-7b45a090203c".} = object of RootObj
+    kind*: ModKind
     name* {.check(value == "", r"name is required").}: string
     desc* {.check(value == "", r"desc is required").}: string
     version* {.check(value == VersionCode(0), r"zero version").}: VersionCode
