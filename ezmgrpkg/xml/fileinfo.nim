@@ -1,6 +1,6 @@
 import winim/inc/winbase
 import winim/[winstr, lean]
-import strformat
+import std/[strformat, strutils]
 import base, ezcommon/version_code
 
 type LANGANDCODEPAGE {.pure, final.} = object
@@ -48,8 +48,10 @@ proc parseModFile*(str: string): tuple[id: string, desc: ref ModDescription] =
   let lc = langcode[]
   let basepart = fmt"\StringFileInfo\{lc.lang:04x}{lc.code:04x}\"
   result.id = queryKind("InternalName")
+  result.desc.kind = parseEnum(queryKind("ModKind"), modServerSide)
   result.desc.name = queryKind("OriginalFilename")
   result.desc.desc = queryKind("FileDescription")
   result.desc.author = queryKind("CompanyName")
   result.desc.comment = queryOptionalKind("Comments")
-  result.desc.license = queryKind("LegalCopyright")
+  result.desc.license = queryKind("Licence")
+  # TODO: load depends info

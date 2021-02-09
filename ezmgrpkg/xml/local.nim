@@ -24,11 +24,6 @@ proc cacheModList(self: ref LocalRepository; base: string) =
   let folder = base /../ self.path
   for file in walkFiles(folder / "ezmod-*.dll"):
     let info = parseModFile(file)
-    info.desc.kind = modServerSide
-    self.cache.add (id: info.id, info: newLocalMod(file, info.desc))
-  for file in walkFiles(folder / "ezmgr-*.dll"):
-    let info = parseModFile(file)
-    info.desc.kind = modManagerSide
     self.cache.add (id: info.id, info: newLocalMod(file, info.desc))
 
 impl LocalRepository, ModRepository:

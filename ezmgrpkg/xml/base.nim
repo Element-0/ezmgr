@@ -13,6 +13,20 @@ type ModKind* {.pure.} = enum
   modServerSide = "server"
   modManagerSide = "manager"
 
+func validInterfaceName(name: string): bool =
+  if name == "": return false
+  for ch in name:
+    case ch:
+    of 'a'..'z', '0'..'9', '-': discard
+    else: return false
+  return true
+
+declareXmlElement:
+  type ModInterface* {.id: "3a176065-a026-4c58-9a51-de17a628235c", children: value.} = object of RootObj
+    value* {.check(not validInterfaceName(value), r"Invalid interface name").}: string
+
+rootns.registerType("interface", ref ModInterface)
+
 declareXmlElement:
   type ModDescription* {.id: "8d04017d-0101-439d-989a-7b45a090203c".} = object of RootObj
     kind*: ModKind
@@ -21,6 +35,7 @@ declareXmlElement:
     version* {.check(value == VersionCode(0), r"zero version").}: VersionCode
     author* {.check(value == "", r"author is required").}: string
     comment*: string
+    depends*, recommands*, provides*: seq[ref ModInterface]
     license* {.check(value == "", r"license is required").}: string
 
 func `<`*(a, b: ref ModDescription): bool = a.version < b.version
