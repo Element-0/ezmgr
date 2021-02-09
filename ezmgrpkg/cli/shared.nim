@@ -25,4 +25,5 @@ proc expectKind*(p: var OptParser, kind: static CmdLineKind) =
     quit 1
 
 proc getModCachedName*(id: string, info: ref ModInfo): string =
-  &"cached-{id}-{info.version}.dll"
+  let desc = info.desc
+  &"cached-{desc.kind}-{id}-{desc.version}.dll"
